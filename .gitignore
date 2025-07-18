@@ -1,0 +1,60 @@
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Build outputs
+build/
+*.hex
+*.bin
+*.ihx
+*.lk
+*.map
+*.mem
+*.lst
+*.rel
+*.rst
+*.sym
+*.asm
+*.adb
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+
+# Log files
+*.log
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+*.bak
+*.backup
