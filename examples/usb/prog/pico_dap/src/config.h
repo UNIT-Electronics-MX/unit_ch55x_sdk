@@ -7,8 +7,8 @@
 // Pin definitions
 #define PIN_LED             P11      // pin connected to LED, active low
 #define PIN_RST             P17       // pin connected to nRESET
-#define PIN_SWD             P15       // pin connected to SWDIO via 100R resistor
-#define PIN_SWK             P16       // pin connected to SWCLK via 100R resistor
+#define PIN_SWD             P16       // pin connected to SWDIO via 100R resistor
+#define PIN_SWK             P15       // pin connected to SWCLK via 100R resistor
 
 // USB device descriptor
 #define USB_VENDOR_ID       0x1209    // VID

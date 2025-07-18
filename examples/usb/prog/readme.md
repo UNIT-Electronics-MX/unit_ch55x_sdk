@@ -1,132 +1,96 @@
 
-# CH552 USB Multi-Protocol Programmer  
-**Supports AVR, ARM (CMSIS-DAP), and CPLD (MAX II)**
+# CH552 USB Multi-Protocol Programmer
 
-This project provides firmware for a USB-based programmer built on the **CH552 microcontroller**, supporting multiple programming targets and protocols, including **AVR**, **ARM Cortex-M**, and **CPLD** devices. The device includes **target voltage selection (3.3V / 5V)** and can be configured with different firmware to suit specific microcontroller families.
+**Supports AVR / ARM (CMSIS-DAP) / CPLD (MAX II)**
 
-![programmer](./static/programmer.png)
-
-
-## 🔌 Hardware Overview
-
-- Microcontroller: **CH552G / CH552E**
-- USB Full-Speed Interface (CDC / HID depending on firmware)
-- Voltage Selector: **3.3V / 5V** target supply switch
-- Programmable firmware profiles:
-  - **AVR Programmer** (USBasp or Serial UPDI)
-  - **ARM CMSIS-DAP Debugger** (picoDAP firmware)
-  - **CPLD JTAG Programmer** (Quartus-compatible)
-
-
-## 🔧 Firmware Profiles
-
-### 🔹 AVR Programmer Firmware
-
-- **Protocols:** USBasp, SerialUPDI
-- **Target Devices:** ATmega, ATtiny, and other AVR MCUs
-- **USB Interface:** libusb-compatible
-- **Tool Compatibility:** 
-  - `avrdude`
-  - PlatformIO
-  - Windows (Zadig/libusb)
-- **Voltage:** Selectable 3.3V or 5V
-
-**Build Options:**
-- Compile with [SDCC](https://sdcc.sourceforge.net/)
-- Or flash precompiled binaries using `tools/chprog.py`
-
-> *USBasp mode enumerates as USB HID device; Serial UPDI uses CDC port.*
+| Component         | Description                      |
+| ----------------- | -------------------------------- |
+| Microcontroller   | CH552G / CH552E                  |
+| USB Interface     | Full-Speed (CDC / HID)           |
+| Target Voltage    | Selectable 3.3 V / 5 V           |
+| Firmware Profiles | Configurable per target/protocol |
+| Programming       | Via USB bootloader (CH55x)       |
 
 ---
 
-### 🔹 CMSIS-DAP Debugger Firmware (picoDAP)
+## Supported Firmware Profiles
 
-- **Protocols:** SWD, JTAG (CMSIS-DAP)
-- **Target Devices:** ARM Cortex-M (e.g., STM32, SAM, nRF52)
-- **Tool Compatibility:**  
-  - [OpenOCD](http://openocd.org/)
-  - PyOCD
-  - Keil µVision, SEGGER Ozone
-- **USB Interface:**
-  - CMSIS-DAP via HID
-  - CDC UART (optional, for logging or VCP)
-- **Drivers:**
-  - Linux/macOS: Native
-  - Windows: `libusbK` (via Zadig) for CDC if needed
+### AVR Programmer
 
-> *Device appears as HID with optional serial COM port.*
+| Feature   | Details                  |
+| --------- | ------------------------ |
+| Protocols | USBasp, UPDI (serial)    |
+| Targets   | ATmega, ATtiny           |
+| Tools     | `avrdude`                |
+| USB Mode  | HID (USBasp), CDC (UPDI) |
 
 ---
 
-### 🔹 CPLD Programmer Firmware (JTAG, Quartus-Compatible)
+### CMSIS-DAP Debugger (picoDAP)
 
-- **Target Devices:** Intel/Altera **MAX II (e.g., EPM240)**
-- **Protocol:** JTAG via USB-Blaster protocol
-- **Tool Compatibility:**  
-  - Intel Quartus Programmer (via USB-Blaster emulation)
-- **USB VID/PID Options:**
-  - Safe distribution mode (default): `0x16C0:0x05DC`
-  - Compatibility mode: `0x09FB:0x6001` *(for full Quartus support)*
-- **Voltage Selection:** 3.3V / 5V via hardware switch
-- **Build System:**  
-  - Compile with SDCC
-  - Flash via WCH bootloader or `chprog.py`
+| Feature  | Details                           |
+| -------- | --------------------------------- |
+| Protocol | SWD (CMSIS-DAP)                   |
+| Targets  | ARM Cortex-M (STM32, nRF52, etc.) |
+| Tools    | OpenOCD, PyOCD                    |
+| USB Mode | HID with optional CDC UART        |
 
 ---
 
-## 🛠️ Toolchain & Flashing
+### CPLD Programmer (USB-Blaster)
 
-### Dependencies
+| Feature      | Details                                     |
+| ------------ | ------------------------------------------- |
+| Targets      | Intel MAX II (e.g., EPM240)                 |
+| Protocol     | JTAG (USB-Blaster emulation)                |
+| Tools        | Intel Quartus Programmer                    |
+| USB VID\:PID | `16C0:05DC` (default), `09FB:6001` (compat) |
+| Voltage      | 3.3 V / 5 V (hardware switch)               |
 
-- [SDCC Compiler](https://sdcc.sourceforge.net/)
-- Python 3 with [`pyusb`](https://github.com/pyusb/pyusb)
+---
+
+## Toolchain
+
+| Requirement      | Usage                    |
+| ---------------- | ------------------------ |
+| SDCC             | Firmware compilation     |
+| Python 3 + pyusb | USB flashing             |
+| chprog.py        | Upload binary to CH552   |
+| WCHISPTool       | Windows flashing utility |
+
+---
+
+## Bootloader Access (CH552)
+
+| Step | Action                         |
+| ---- | ------------------------------ |
+| 1    | Disconnect power               |
+| 2    | Hold the BOOT button           |
+| 3    | Connect USB while holding BOOT |
+| 4    | Release button                 |
+
+**udev rule for Linux (optional):**
 
 ```bash
-sudo apt install build-essential sdcc python3 python3-pip
-pip3 install pyusb
-```
-
-### Flashing Firmware (Linux/Windows/macOS)
-
-```bash
-# For bootloader mode
-python3 tools/chprog.py <firmware.bin>
-```
-
-Or use **WCHISPTool** for Windows.
-
----
-
-## 📌 Bootloader Mode (CH552)
-
-To enter USB bootloader mode:
-
-1. Disconnect all power.
-2. Hold **BOOT** button.
-3. Reconnect USB while holding BOOT.
-4. Release button — the device enters bootloader mode.
-
-Linux users: set proper udev rules if needed.
-
-```bash
-echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="4348", ATTR{idProduct}=="55e0", MODE="666"' | sudo tee /etc/udev/rules.d/99-ch55x.rules
-sudo udevadm control --reload
-sudo udevadm trigger
+echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="4348", ATTR{idProduct}=="55e0", MODE="666"' \
+| sudo tee /etc/udev/rules.d/99-ch55x.rules
+sudo udevadm control --reload && sudo udevadm trigger
 ```
 
 ---
 
-## ✅ Summary of Firmware Capabilities
+## Firmware Feature Matrix
 
-| Firmware       | Protocols         | Targets            | USB Mode      | Tools Supported     |
-|----------------|-------------------|---------------------|---------------|----------------------|
-| AVR Programmer | USBasp / UPDI     | AVR (ATmega, ATtiny) | CDC / HID     | `avrdude`, PlatformIO |
-| CMSIS-DAP      | SWD, JTAG         | ARM Cortex-M        | HID + CDC     | OpenOCD, PyOCD       |
-| CPLD Programmer| JTAG (Blaster)    | EPM240 / MAX II     | HID           | Quartus Programmer   |
+| Firmware        | Protocols     | Target Devices        | USB Interface | Compatible Tools   |
+| --------------- | ------------- | --------------------- | ------------- | ------------------ |
+| AVR Programmer  | USBasp / UPDI | ATmega, ATtiny        | HID / CDC     | `avrdude`          |
+| CMSIS-DAP       | SWD           | ARM Cortex-M          | HID + CDC     | OpenOCD, PyOCD     |
+| CPLD Programmer | JTAG          | MAX II (e.g., EPM240) | HID           | Quartus Programmer |
 
 ---
 
-## 🪪 License
+## License
 
-This project is licensed under the **MIT License** or **Creative Commons Attribution-ShareAlike 3.0**, depending on the firmware base used. Refer to each firmware subproject for license specifics.
+This project is licensed under the [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/).
 
+![license.png](https://i.creativecommons.org/l/by-sa/3.0/88x31.png)
