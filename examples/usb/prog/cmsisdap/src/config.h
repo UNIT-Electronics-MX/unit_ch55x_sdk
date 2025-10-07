@@ -10,10 +10,10 @@
 #define PIN_SWK             P15       // pin connected to SWCLK/TCK via 100R resistor
 #define PIN_RST             P17       // pin connected to nRESET
 #define PIN_TDO             P14       // pin connected to TDO via 100R resistor
-#define PIN_TDI             P30       // pin connected to TDI via 100R resistor
-#define PIN_TRST            P31       // pin connected to nTRST
-#define PIN_RXD             P32       // pin connected to RXD via 470R resistor
-#define PIN_TXD             P34       // pin connected to TXT via 470R resistor
+#define PIN_TDI             P33       // pin connected to TDI via 100R resistor
+#define PIN_TRST            P32       // pin connected to nTRST
+#define PIN_RXD             P30       // pin connected to RXD via 470R resistor
+#define PIN_TXD             P31       // pin connected to TXT via 470R resistor
 
 // USB device descriptor
 #define USB_VENDOR_ID       0x1A86    // VID
