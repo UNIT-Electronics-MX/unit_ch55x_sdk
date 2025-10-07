@@ -47,12 +47,11 @@ Authors
 Kongou Hikari <kongouhikari@qq.com>
 
 
-
-
-CH552          ESP8266
-P3.0 (pin xx)  → TX
-P3.1 (pin xx)  → RX
-P1.7 (pin xx)  → GPIO0
-P1.4 (pin xx)  → EN/RST
-GND            → GND
-3.3V           → VCC
+| CH552         | ESP8266   | Función    |
+|-------------- |-----------|------------|
+| P3.0 (pin xx) | TX        | UART TX    |
+| P3.1 (pin xx) | RX        | UART RX    |
+| P1.7 (pin xx) | GPIO0     | Boot/GPIO0 |
+| P1.4 (pin xx) | EN/RST    | Reset      |
+| GND           | GND       | GND        |
+| 3.3V          | VCC       | Alimentación |
