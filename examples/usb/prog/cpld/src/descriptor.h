@@ -10,8 +10,8 @@
 // Cambia a 1 para usar VID/PID de Altera (solo uso personal / pruebas)
 // descriptor.h
 
-#define USE_COMPATIBLE_VIDPID     0
-#define USE_COMPATIBLE_STRINGS    0
+#define USE_COMPATIBLE_VIDPID     1
+#define USE_COMPATIBLE_STRINGS    1
 
 #if USE_COMPATIBLE_VIDPID
 #define USB_VID  0x09FB
