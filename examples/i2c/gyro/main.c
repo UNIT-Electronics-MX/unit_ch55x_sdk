@@ -16,7 +16,6 @@
  #include "src/delay.h"
  #include "src/i2c.h"
  #include "src/oled.h"
- #include <stdio.h>
  #include <stdint.h>
  
  #define MPU6050_ADDR         0x68u
@@ -26,6 +25,8 @@
  // Prototipos
  void MPU6050_init(void);
  void MPU6050_readGyro(int16_t *gx, int16_t *gy, int16_t *gz);
+ void OLED_printInt(int16_t value);
+ void OLED_printGyroLine(char axis, int16_t whole, int16_t frac, uint8_t newline);
  
  void main(void) {
      CLK_config();
@@ -34,7 +35,6 @@
      MPU6050_init();
      OLED_init();
  
-     char buffer[32];
      while (1) {
          int16_t gx_raw, gy_raw, gz_raw;
          int16_t gx_int, gy_int, gz_int;
@@ -62,17 +62,9 @@
          OLED_print("      Giroscopio     ");
          OLED_print("- - - - - - - - - - -\n");
  
-         // Eje X: entero.fracción
-         sprintf(buffer, "X: %d.%02d\n", gx_int, gx_frac);
-         OLED_print(buffer);
- 
-         // Eje Y
-         sprintf(buffer, "Y: %d.%02d\n", gy_int, gy_frac);
-         OLED_print(buffer);
- 
-         // Eje Z
-         sprintf(buffer, "Z: %d.%02d", gz_int, gz_frac);
-         OLED_print(buffer);
+         OLED_printGyroLine('X', gx_int, gx_frac, 1);
+         OLED_printGyroLine('Y', gy_int, gy_frac, 1);
+         OLED_printGyroLine('Z', gz_int, gz_frac, 0);
  
          // Espera antes de siguiente lectura
          DLY_ms(100);
@@ -98,4 +90,40 @@
      *gz = (I2C_read((uint8_t)0) << 8) | I2C_read((uint8_t)0);
  
      I2C_stop();
+ }
+
+ void OLED_printInt(int16_t value) {
+     uint16_t magnitude;
+     uint16_t divisor = 10000;
+     uint8_t started = 0;
+
+     if (value < 0) {
+         OLED_write('-');
+         magnitude = (uint16_t)(-value);
+     } else {
+         magnitude = (uint16_t)value;
+     }
+
+     while (divisor > 1) {
+         uint8_t digit = (uint8_t)(magnitude / divisor);
+         if (digit || started) {
+             OLED_write((char)('0' + digit));
+             started = 1;
+         }
+         magnitude %= divisor;
+         divisor /= 10;
+     }
+     OLED_write((char)('0' + magnitude));
+ }
+
+ void OLED_printGyroLine(char axis, int16_t whole, int16_t frac, uint8_t newline) {
+     OLED_write(axis);
+     OLED_print(": ");
+     OLED_printInt(whole);
+     OLED_write('.');
+     OLED_write((char)('0' + (frac / 10)));
+     OLED_write((char)('0' + (frac % 10)));
+     if (newline) {
+         OLED_write('\n');
+     }
  }

@@ -1,0 +1,27 @@
+{
+  "name": "UNIT CH552",
+  "url": "https://github.com/UNIT-Electronics-MX/unit_ch55x_docker_sdk",
+  "vendor": "UNIT Electronics",
+  "build": {
+    "core": "ch55x",
+    "cpu": "mcs51",
+    "f_cpu": "16000000",
+    "mcu": "ch552",
+    "xram_loc": "0x0100",
+    "xram_size": "0x0300",
+    "code_size": "0x3800"
+  },
+  "upload": {
+    "bootcfg": "3",
+    "maximum_ram_size": 768,
+    "maximum_size": 14336,
+    "protocol": "auto",
+    "protocols": [
+      "auto",
+      "chprog",
+      "vnproch55x",
+      "vnproch55x_serial"
+    ]
+  },
+  "frameworks": []
+}

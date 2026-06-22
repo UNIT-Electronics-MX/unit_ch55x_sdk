@@ -1,0 +1,32 @@
+{
+  "name": "unit_ch55x",
+  "title": "UNIT CH55x",
+  "description": "PlatformIO support for CH55x projects using the UNIT CH55x SDCC SDK.",
+  "homepage": "https://github.com/UNIT-Electronics-MX/unit_ch55x_docker_sdk",
+  "license": "MIT",
+  "keywords": [
+    "dev-platform",
+    "ch55x",
+    "ch552",
+    "ch554",
+    "ch559",
+    "mcs51",
+    "8051",
+    "sdcc"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UNIT-Electronics-MX/unit_ch55x_docker_sdk.git"
+  },
+  "version": "0.1.0",
+  "engines": {
+    "platformio": "^6"
+  },
+  "packages": {
+    "toolchain-sdcc": {
+      "type": "toolchain",
+      "owner": "platformio",
+      "version": ">=1.40100.0,<1.40401.0"
+    }
+  }
+}

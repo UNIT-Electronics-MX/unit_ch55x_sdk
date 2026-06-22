@@ -15,7 +15,7 @@
 #include "src/gpio.h"  
 #include "src/delay.h"  
 
-#define PIN_LED P34
+#define PIN_LED P34 
 
 void main(void)
 {
@@ -27,6 +27,6 @@ void main(void)
   {
     // Toggle LED state every 500ms
     PIN_toggle(PIN_LED);
-    DLY_ms(500);
+    DLY_ms(100);
   }
 }

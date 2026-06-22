@@ -3,6 +3,7 @@
 *.code-workspace
 
 # Build outputs
+.pio/
 build/
 *.hex
 *.bin

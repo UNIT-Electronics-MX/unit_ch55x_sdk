@@ -85,6 +85,139 @@ spkg compose
 
 ---
 
+## PlatformIO
+
+This repository can also be used as a local PlatformIO development platform for
+CH55x projects. PlatformIO will use SDCC, build `firmware.ihx`,
+`firmware.hex`, and `firmware.bin`. Upload defaults to `auto`, which uses
+`chprog.py` on Linux/macOS and `vnproch55x` on Windows.
+
+### Build the PlatformIO example
+
+```bash
+cd examples/platformio-blink
+pio run
+```
+
+The generated firmware files will be in:
+
+```text
+examples/platformio-blink/.pio/build/unit_ch552/
+```
+
+All examples under `examples/` include a `platformio.ini`, so they can be built
+the same way:
+
+```bash
+cd examples/usb/usb_uart
+pio run
+```
+
+### Upload
+
+Put the CH55x in bootloader mode and run:
+
+```bash
+pio run -t upload
+```
+
+On Linux/macOS the default uploader is `chprog.py`, which requires PyUSB in
+the PlatformIO Python environment:
+
+```bash
+~/.platformio/penv/bin/python -m pip install pyusb
+```
+
+On Linux, USB access may also require udev permissions:
+
+```bash
+echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="4348", ATTR{idProduct}=="55e0", MODE="666"' | sudo tee /etc/udev/rules.d/99-ch55x.rules
+sudo udevadm control --reload-rules
+```
+
+### Windows upload with Arduino `vnproch55x`
+
+Arduino uses `vnproch55x.exe` from the `devlabtools` package to upload on
+Windows. The default `upload_protocol = auto` selects it automatically on
+Windows. Download the tools archive from the Arduino package release and
+extract it in the SDK root or in your PlatformIO project root:
+
+```text
+https://github.com/UNIT-Electronics/Uelectronics-CH552-Arduino-Package/releases/download/v0.0.6/ch55xduino-tools_mingw32-2026.06.21.tar.bz2
+```
+
+The extracted layout must contain:
+
+```text
+tools/win/vnproch55x.exe
+tools/win/*.dll
+```
+
+The default PlatformIO configuration can stay the same:
+
+```ini
+[env:unit_ch552]
+platform = ../..
+board = unit_ch552
+
+; Arduino defaults to bootcfg 3 for CH552 P3.6 (D+) pull-up.
+board_upload.bootcfg = 3
+```
+
+You can still force a specific uploader when needed:
+
+```ini
+upload_protocol = chprog
+upload_protocol = vnproch55x
+```
+
+For serial upload:
+
+```ini
+upload_protocol = vnproch55x_serial
+upload_port = COM5
+```
+
+### Use the SDK as a local PlatformIO platform
+
+In a PlatformIO project inside this repository, point `platform` to the SDK
+root:
+
+```ini
+[env:unit_ch552]
+platform = ../..
+board = unit_ch552
+```
+
+For an existing Makefile-style example where `main.c` is at the project root,
+set the source directory globally:
+
+```ini
+[platformio]
+src_dir = .
+
+[env:unit_ch552]
+platform = ../..
+board = unit_ch552
+```
+
+Available boards:
+
+- `unit_ch551`
+- `unit_ch552`
+- `unit_ch554`
+- `unit_ch559`
+
+Common overrides:
+
+```ini
+board_build.f_cpu = 24000000
+build_flags =
+  -D PIN_LED=P34
+```
+
+---
+
 ### Create a New Project
 
 To create a new project, use the `init` command:
