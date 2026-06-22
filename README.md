@@ -139,18 +139,36 @@ sudo udevadm control --reload-rules
 
 Arduino uses `vnproch55x.exe` from the `devlabtools` package to upload on
 Windows. The default `upload_protocol = auto` selects it automatically on
-Windows. Download the tools archive from the Arduino package release and
-extract it in the SDK root or in your PlatformIO project root:
+Windows.
+
+If PlatformIO does not download the uploader automatically, install it manually
+in the SDK root:
+
+```powershell
+cd C:\path\to\unit_ch55x_docker_sdk
+Invoke-WebRequest "https://github.com/UNIT-Electronics/Uelectronics-CH552-Arduino-Package/releases/download/v0.0.6/ch55xduino-tools_mingw32-2026.06.21.tar.bz2" -OutFile "ch55xduino-tools_mingw32-2026.06.21.tar.bz2"
+tar -xjf ch55xduino-tools_mingw32-2026.06.21.tar.bz2
+Test-Path .\tools\win\vnproch55x.exe
+```
+
+The `Test-Path` command must print `True`. The extracted layout must contain:
+
+```text
+tools/win/vnproch55x.exe
+tools/win/*.dll
+```
+
+The tools archive is published by the Arduino package release:
 
 ```text
 https://github.com/UNIT-Electronics/Uelectronics-CH552-Arduino-Package/releases/download/v0.0.6/ch55xduino-tools_mingw32-2026.06.21.tar.bz2
 ```
 
-The extracted layout must contain:
+After installing the uploader, build and upload from the PlatformIO project:
 
-```text
-tools/win/vnproch55x.exe
-tools/win/*.dll
+```powershell
+C:\Users\<user>\.platformio\penv\Scripts\platformio.exe run
+C:\Users\<user>\.platformio\penv\Scripts\platformio.exe run --target upload
 ```
 
 The default PlatformIO configuration can stay the same:
@@ -186,6 +204,15 @@ root:
 ```ini
 [env:unit_ch552]
 platform = ../..
+board = unit_ch552
+```
+
+To pin a released SDK version from GitHub, use the release tag in
+`platformio.ini`:
+
+```ini
+[env:unit_ch552]
+platform = https://github.com/UNIT-Electronics-MX/unit_ch55x_docker_sdk.git#v0.1.1
 board = unit_ch552
 ```
 
