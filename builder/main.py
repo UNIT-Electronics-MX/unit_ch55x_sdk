@@ -1,6 +1,7 @@
 from os import listdir, walk
 from os.path import abspath, basename, dirname, exists, join, splitext
 
+from SCons.Errors import UserError
 from SCons.Script import AlwaysBuild, Builder, Default, DefaultEnvironment
 
 
@@ -142,7 +143,16 @@ def _get_vnproch55x():
         if exists(resolved):
             return candidate
 
-    return executable
+    raise UserError(
+        "vnproch55x uploader not found. PlatformIO should install "
+        "tool-devlabtools automatically; if it cannot, download "
+        "ch55xduino-tools_mingw32-2026.06.21.tar.bz2 from the "
+        "Uelectronics-CH552-Arduino-Package v0.0.6 release and extract it "
+        "so tools/%s/%s exists in the SDK root or project root." % (
+            tool_dir,
+            executable,
+        )
+    )
 
 
 def _resolve_upload_protocol(upload_protocol):

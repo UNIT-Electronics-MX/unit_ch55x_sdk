@@ -27,6 +27,11 @@
       "type": "toolchain",
       "owner": "platformio",
       "version": ">=1.40100.0,<1.40401.0"
+    },
+    "tool-devlabtools": {
+      "type": "uploader",
+      "optional": true,
+      "version": "https://github.com/UNIT-Electronics/Uelectronics-CH552-Arduino-Package/releases/download/v0.0.6/ch55xduino-tools_mingw32-2026.06.21.tar.bz2"
     }
   }
 }
