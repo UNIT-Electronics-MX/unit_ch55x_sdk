@@ -115,8 +115,14 @@ def _host_tool_dir():
 def _get_vnproch55x():
     tool_dir, executable = _host_tool_dir()
     package_names = ("tool-devlabtools", "devlabtools", "tool-vnproch55x")
-    package_dirs = [platform.get_package_dir(name) for name in package_names]
-    package_dirs = [path for path in package_dirs if path]
+    package_dirs = []
+    for name in package_names:
+        try:
+            package_dir = platform.get_package_dir(name)
+        except KeyError:
+            package_dir = None
+        if package_dir:
+            package_dirs.append(package_dir)
 
     candidates = []
     for package_dir in package_dirs:
