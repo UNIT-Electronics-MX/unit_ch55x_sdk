@@ -1,5 +1,6 @@
 from os import listdir, walk
 from os.path import abspath, basename, dirname, exists, join, splitext
+from subprocess import call
 
 from SCons.Errors import UserError
 from SCons.Script import AlwaysBuild, Builder, Default, DefaultEnvironment
@@ -155,6 +156,12 @@ def _get_vnproch55x():
     )
 
 
+def _upload_vnproch55x(target, source, env):
+    uploader = env.subst(_get_vnproch55x())
+    flags = [env.subst(str(flag)) for flag in env.get("UPLOADERFLAGS", [])]
+    return call([uploader] + flags + [str(source[0])])
+
+
 def _resolve_upload_protocol(upload_protocol):
     if upload_protocol != "auto":
         return upload_protocol
@@ -258,33 +265,34 @@ env.Replace(
     UPLOADER=_get_uploader(),
     UPLOADCMD='"$PYTHONEXE" "$UPLOADER" "$SOURCE"',
 )
+upload_action = env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
 
 upload_protocol = _resolve_upload_protocol(env.subst("$UPLOAD_PROTOCOL"))
 if upload_protocol in ("vnproch55x", "vnproch55x_usb"):
     env.Replace(
-        UPLOADER=_get_vnproch55x(),
+        UPLOADER="vnproch55x",
         UPLOADERFLAGS=[
             "-r", "2",
             "-t", _board_value("mcu", "ch552").upper(),
             "-c", str(board.get("upload.bootcfg", "3")),
         ],
-        UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS "$SOURCE"',
     )
+    upload_action = env.VerboseAction(_upload_vnproch55x, "Uploading $SOURCE")
     upload_source = target_hex
 elif upload_protocol == "vnproch55x_serial":
     env.Replace(
-        UPLOADER=_get_vnproch55x(),
+        UPLOADER="vnproch55x",
         UPLOADERFLAGS=[
             "-s", "$UPLOAD_PORT",
             "-t", _board_value("mcu", "ch552").upper(),
         ],
-        UPLOADCMD='"$UPLOADER" $UPLOADERFLAGS "$SOURCE"',
     )
+    upload_action = env.VerboseAction(_upload_vnproch55x, "Uploading $SOURCE")
     upload_source = target_hex
 else:
     upload_source = target_bin
 
-upload = env.Alias("upload", upload_source, env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE"))
+upload = env.Alias("upload", upload_source, upload_action)
 AlwaysBuild(upload)
 
 AlwaysBuild(env.Alias("buildprog", [target_ihx, target_hex, target_bin]))
