@@ -135,14 +135,24 @@ echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="4348", ATTR{idProduct}=="55e0", MODE="6
 sudo udevadm control --reload-rules
 ```
 
+If an older checkout fails while installing `tool-devlabtools` or tries to run
+`git clone` against a `ch55xduino-tools_*.tar.bz2` URL, update this SDK to
+version `v0.1.3` or newer. That archive is a Windows-only Arduino tools archive,
+not a PlatformIO package, and Linux/macOS do not need it for the default
+`chprog.py` uploader.
+
 ### Windows upload with Arduino `vnproch55x`
 
 Arduino uses `vnproch55x.exe` from the `devlabtools` package to upload on
 Windows. The default `upload_protocol = auto` selects it automatically on
 Windows.
 
-If PlatformIO does not download the uploader automatically, install it manually
-in the SDK root:
+The current Arduino tools archive is not a PlatformIO package, so PlatformIO
+cannot install it as a `platform.json` package. When `pio run -t upload` runs
+on Windows, the SDK downloads that archive, extracts it into the SDK root, and
+then runs `tools/win/vnproch55x.exe`.
+
+If the automatic download is blocked, install it manually in the SDK root:
 
 ```powershell
 cd C:\path\to\unit_ch55x_docker_sdk
@@ -164,7 +174,8 @@ The tools archive is published by the Arduino package release:
 https://github.com/UNIT-Electronics/Uelectronics-CH552-Arduino-Package/releases/download/v0.0.6/ch55xduino-tools_mingw32-2026.06.21.tar.bz2
 ```
 
-After installing the uploader, build and upload from the PlatformIO project:
+After installing or automatically downloading the uploader, build and upload
+from the PlatformIO project:
 
 ```powershell
 C:\Users\<user>\.platformio\penv\Scripts\platformio.exe run
@@ -212,7 +223,7 @@ To pin a released SDK version from GitHub, use the release tag in
 
 ```ini
 [env:unit_ch552]
-platform = https://github.com/UNIT-Electronics-MX/unit_ch55x_docker_sdk.git#v0.1.1
+platform = https://github.com/UNIT-Electronics-MX/unit_ch55x_docker_sdk.git#v0.1.3
 board = unit_ch552
 ```
 
