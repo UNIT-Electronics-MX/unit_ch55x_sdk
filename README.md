@@ -138,7 +138,7 @@ sudo udevadm control --reload-rules
 
 If an older checkout fails while installing `tool-devlabtools` or tries to run
 `git clone` against a `ch55xduino-tools_*.tar.bz2` URL, update this SDK to
-version `v0.1.3` or newer. That archive is a Windows-only Arduino tools archive,
+version `v0.1.4` or newer. That archive is a Windows-only Arduino tools archive,
 not a PlatformIO package, and Linux/macOS do not need it for the default
 `chprog.py` uploader.
 
