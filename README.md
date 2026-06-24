@@ -121,8 +121,9 @@ Put the CH55x in bootloader mode and run:
 pio run -t upload
 ```
 
-On Linux/macOS the default uploader is `chprog.py`, which requires PyUSB in
-the PlatformIO Python environment:
+On Linux/macOS the default uploader is `chprog.py`. During upload, the SDK
+checks the PlatformIO Python environment and installs PyUSB automatically if it
+is missing. If the automatic install is blocked, install it manually:
 
 ```bash
 ~/.platformio/penv/bin/python -m pip install pyusb

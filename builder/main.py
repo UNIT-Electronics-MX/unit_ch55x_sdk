@@ -197,6 +197,26 @@ def _upload_vnproch55x(target, source, env):
     return call([uploader] + flags + [str(source[0])])
 
 
+def _ensure_pyusb():
+    python = env.subst("$PYTHONEXE")
+    check = "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec('usb') else 1)"
+    if call([python, "-c", check]) == 0:
+        return
+
+    print("PyUSB not found in the PlatformIO Python environment; installing pyusb")
+    if call([python, "-m", "pip", "install", "pyusb"]) != 0:
+        raise UserError(
+            "Failed to install pyusb automatically. Run: "
+            "%s -m pip install pyusb" % python
+        )
+
+
+def _upload_chprog(target, source, env):
+    _ensure_pyusb()
+    uploader = env.subst("$UPLOADER")
+    return call([env.subst("$PYTHONEXE"), uploader, str(source[0])])
+
+
 def _resolve_upload_protocol(upload_protocol):
     if upload_protocol != "auto":
         return upload_protocol
@@ -300,7 +320,7 @@ env.Replace(
     UPLOADER=_get_uploader(),
     UPLOADCMD='"$PYTHONEXE" "$UPLOADER" "$SOURCE"',
 )
-upload_action = env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
+upload_action = env.VerboseAction(_upload_chprog, "Uploading $SOURCE")
 
 upload_protocol = _resolve_upload_protocol(env.subst("$UPLOAD_PROTOCOL"))
 if upload_protocol in ("vnproch55x", "vnproch55x_usb"):
