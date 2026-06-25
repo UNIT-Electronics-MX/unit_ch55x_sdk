@@ -99,6 +99,13 @@ cd examples/platformio-blink
 pio run
 ```
 
+The SDK CLI can also run PlatformIO and refresh a stale local PlatformIO copy of
+this platform before building:
+
+```bash
+spkg pio ./examples/platformio-blink run
+```
+
 The generated firmware files will be in:
 
 ```text
@@ -112,6 +119,11 @@ the same way:
 cd examples/usb/usb_uart
 pio run
 ```
+
+If PlatformIO has an older `unit_ch55x` platform installed under
+`~/.platformio/platforms/`, `spkg pio` removes only that stale platform when its
+version does not match this SDK checkout. It does not clear the full PlatformIO
+cache.
 
 ### Upload
 

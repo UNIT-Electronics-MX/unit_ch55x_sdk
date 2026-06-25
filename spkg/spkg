@@ -2,6 +2,8 @@
 
 VERSION="1.0.0"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SDK_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PLATFORM_NAME="unit_ch55x"
 
 # Detectar si estamos en Git Bash sobre Windows
 IS_WINDOWS=false
@@ -19,11 +21,68 @@ convert_path_windows() {
     fi
 }
 
+json_version() {
+    local file="$1"
+    python3 -c 'import json, sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("version", ""))' "$file" 2>/dev/null || true
+}
+
+find_platformio() {
+    if command -v pio >/dev/null 2>&1; then
+        command -v pio
+        return 0
+    fi
+    if command -v platformio >/dev/null 2>&1; then
+        command -v platformio
+        return 0
+    fi
+    if [ -x "$HOME/.platformio/penv/bin/pio" ]; then
+        echo "$HOME/.platformio/penv/bin/pio"
+        return 0
+    fi
+    if [ -x "$HOME/.platformio/penv/Scripts/pio.exe" ]; then
+        echo "$HOME/.platformio/penv/Scripts/pio.exe"
+        return 0
+    fi
+    return 1
+}
+
+sync_platformio_platform() {
+    local pio_bin="$1"
+    local sdk_version
+    local core_dir
+    local installed_dir
+    local installed_json
+    local installed_version
+
+    sdk_version="$(json_version "$SDK_ROOT/platform.json")"
+    if [ -z "$sdk_version" ]; then
+        echo "No se pudo leer la version del SDK en $SDK_ROOT/platform.json"
+        return 1
+    fi
+
+    core_dir="${PLATFORMIO_CORE_DIR:-$HOME/.platformio}"
+    installed_dir="$core_dir/platforms/$PLATFORM_NAME"
+    installed_json="$installed_dir/platform.json"
+
+    if [ ! -f "$installed_json" ]; then
+        return 0
+    fi
+
+    installed_version="$(json_version "$installed_json")"
+    if [ "$installed_version" = "$sdk_version" ]; then
+        return 0
+    fi
+
+    echo "Actualizando plataforma PlatformIO $PLATFORM_NAME: ${installed_version:-desconocida} -> $sdk_version"
+    "$pio_bin" pkg uninstall -g -p "$PLATFORM_NAME" --skip-dependencies --silent >/dev/null 2>&1 || rm -rf "$installed_dir"
+}
+
 print_help() {
     echo "spkg - CH552 SDK CLI Tool"
     echo ""
     echo "Uso:"
     echo "  spkg -p <ruta> [comando]    Ejecuta make <comando> en la ruta"
+    echo "  spkg pio <ruta> [args...]   Ejecuta PlatformIO y actualiza la plataforma local"
     echo "  spkg compose                Ejecuta docker compose build"
     echo "  spkg init <ruta>            Crea nuevo proyecto basado en template_project/"
     echo "  spkg --version              Muestra la versión"
@@ -38,6 +97,7 @@ print_help() {
     echo "Ejemplos:"
     echo "  spkg -p ./template"
     echo "  spkg -p ./examples/Blink clean"
+    echo "  spkg pio ./examples/ws2812 run"
 }
 
 # Mostrar versión
@@ -74,6 +134,32 @@ fi
 if [[ "$1" == "compose" ]]; then
     echo "🔧 Construyendo imagen Docker..."
     docker compose -f "$SCRIPT_DIR/docker-compose.yml" build
+    exit $?
+fi
+
+# PlatformIO con sincronizacion de la plataforma instalada
+if [[ "$1" == "pio" && -n "$2" ]]; then
+    PROJECT_DIR="$2"
+    shift 2
+
+    if [ ! -f "$PROJECT_DIR/platformio.ini" ]; then
+        echo "❌ No se encontró un platformio.ini en $PROJECT_DIR"
+        exit 1
+    fi
+
+    PIO_BIN="$(find_platformio)" || {
+        echo "❌ No se encontró PlatformIO. Instala PlatformIO o agrega 'pio' al PATH."
+        exit 1
+    }
+
+    sync_platformio_platform "$PIO_BIN" || exit 1
+
+    if [ "$#" -eq 0 ]; then
+        set -- run
+    fi
+
+    echo "🚀 Ejecutando PlatformIO en: $PROJECT_DIR"
+    (cd "$PROJECT_DIR" && "$PIO_BIN" "$@")
     exit $?
 fi
 
