@@ -99,11 +99,17 @@ cd examples/platformio-blink
 pio run
 ```
 
-The SDK CLI can also run PlatformIO and refresh a stale local PlatformIO copy of
-this platform before building:
+Before building, run the root upgrade helper to refresh a stale local
+PlatformIO copy of this platform:
 
 ```bash
-spkg pio ./examples/platformio-blink run
+./upgrade ./examples/platformio-blink run
+```
+
+To refresh only the installed PlatformIO platform without building:
+
+```bash
+./upgrade
 ```
 
 The generated firmware files will be in:
@@ -121,7 +127,7 @@ pio run
 ```
 
 If PlatformIO has an older `unit_ch55x` platform installed under
-`~/.platformio/platforms/`, `spkg pio` removes only that stale platform when its
+`~/.platformio/platforms/`, `./upgrade` removes only that stale platform when its
 version does not match this SDK checkout. It does not clear the full PlatformIO
 cache.
 
