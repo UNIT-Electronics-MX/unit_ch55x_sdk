@@ -1,6 +1,6 @@
 {
   "name": "UNIT CH554",
-  "url": "https://github.com/UNIT-Electronics-MX/unit_ch55x_docker_sdk",
+  "url": "https://github.com/UNIT-Electronics-MX/unit_ch55x_sdk",
   "vendor": "UNIT Electronics",
   "build": {
     "core": "ch55x",

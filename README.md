@@ -1,36 +1,45 @@
 
 
-# CH552 Docker SDK
+# UNIT CH55x SDK
 
-> Portable SDK for CH552 firmware development using SDCC inside Docker containers. Includes a cross-platform CLI tool (`spkg`) to simplify builds on both Linux and Windows.
+> Cross-platform PlatformIO development platform for UNIT CH55x firmware
+> projects on Linux, macOS, and Windows. It builds CH55x applications with
+> SDCC, supports PlatformIO upload workflows, and also includes optional
+> Docker-based tooling through the `spkg` CLI.
+
+Repository: [UNIT-Electronics-MX/unit_ch55x_sdk](https://github.com/UNIT-Electronics-MX/unit_ch55x_sdk/)
 
 ## Features
 
-- Unified CLI tool: `spkg` for Linux, macOS, and Windows (via Git Bash)
-- No need to install SDCC or toolchains manually
-- Fully Dockerized environment for isolated builds
-- Makefile-based project system compatible with CH552/CH55x
-- Example project provided in `examples/`
+- PlatformIO platform support for CH55x projects on Linux, macOS, and Windows
+- PlatformIO upload flow with `chprog.py` on Linux/macOS and `vnproch55x` on Windows
+- SDCC-based firmware builds for `firmware.ihx`, `firmware.hex`, and `firmware.bin`
+- Docker-based `spkg` CLI for isolated builds on Linux, macOS, and Windows
+- Example projects provided in `examples/`
 
 
 ## Requirements
 
-### Common (All Platforms)
+### Common (PlatformIO on All Platforms)
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop)
-
-### Linux/macOS
-
+- [PlatformIO Core](https://platformio.org/install/cli) or PlatformIO IDE
 - Git
+
+### Linux/macOS PlatformIO Upload
+
 - Python 3
-- Bash shell
-- Superuser privileges required to run Docker
 
 ### Windows
 
 - [Git Bash](https://gitforwindows.org/)
-- Docker Desktop with WSL2 backend or Hyper-V enabled
 - MinGW64 (included with Git Bash) for `make` command
+- [WCH USB driver CH372DRV](https://www.wch-ic.com/downloads/CH372DRV_EXE.html) for USB upload
+
+### Optional Docker / `spkg`
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- Bash shell
+- Superuser privileges required to run Docker on Linux/macOS
 
 > Note: Running `spkg` on Linux may require `sudo` if your user is not part of the `docker` group. You can add your user with:  
 > `sudo usermod -aG docker $USER && newgrp docker`
@@ -40,8 +49,8 @@
 Clone the repository:
 
 ```bash
-git clone git@github.com:UNIT-Electronics-MX/unit_ch55x_docker_sdk.git
-cd ch552-docker-sdk/spkg
+git clone https://github.com/UNIT-Electronics-MX/unit_ch55x_sdk.git
+cd unit_ch55x_sdk/spkg
 chmod +x spkg
 ```
 
@@ -87,10 +96,10 @@ spkg compose
 
 ## PlatformIO
 
-This repository can also be used as a local PlatformIO development platform for
-CH55x projects. PlatformIO will use SDCC, build `firmware.ihx`,
-`firmware.hex`, and `firmware.bin`. Upload defaults to `auto`, which uses
-`chprog.py` on Linux/macOS and `vnproch55x` on Windows.
+This repository is a cross-platform PlatformIO development platform for CH55x
+projects on Linux, macOS, and Windows. PlatformIO uses SDCC, builds
+`firmware.ihx`, `firmware.hex`, and `firmware.bin`, and defaults upload to
+`auto`, which uses `chprog.py` on Linux/macOS and `vnproch55x` on Windows.
 
 ### Build the PlatformIO example
 
@@ -166,6 +175,11 @@ Arduino uses `vnproch55x.exe` from the `devlabtools` package to upload on
 Windows. The default `upload_protocol = auto` selects it automatically on
 Windows.
 
+Before uploading on Windows, install the official
+[WCH USB driver CH372DRV](https://www.wch-ic.com/downloads/CH372DRV_EXE.html).
+The driver is required for the Windows uploader to detect CH55x devices in USB
+bootloader mode.
+
 The current Arduino tools archive is not a PlatformIO package, so PlatformIO
 cannot install it as a `platform.json` package. When `pio run -t upload` runs
 on Windows, the SDK downloads that archive, extracts it into the SDK root, and
@@ -174,7 +188,7 @@ then runs `tools/win/vnproch55x.exe`.
 If the automatic download is blocked, install it manually in the SDK root:
 
 ```powershell
-cd C:\path\to\unit_ch55x_docker_sdk
+cd C:\path\to\unit_ch55x_sdk
 Invoke-WebRequest "https://github.com/UNIT-Electronics/Uelectronics-CH552-Arduino-Package/releases/download/v0.0.6/ch55xduino-tools_mingw32-2026.06.21.tar.bz2" -OutFile "ch55xduino-tools_mingw32-2026.06.21.tar.bz2"
 tar -xjf ch55xduino-tools_mingw32-2026.06.21.tar.bz2
 Test-Path .\tools\win\vnproch55x.exe
@@ -242,7 +256,7 @@ To pin a released SDK version from GitHub, use the release tag in
 
 ```ini
 [env:unit_ch552]
-platform = https://github.com/UNIT-Electronics-MX/unit_ch55x_docker_sdk.git#v0.1.3
+platform = https://github.com/UNIT-Electronics-MX/unit_ch55x_sdk.git#v0.1.3
 board = unit_ch552
 ```
 
@@ -301,7 +315,7 @@ You can flash it using:
 ## Project Structure
 
 ```
-ch552-docker-sdk/
+unit_ch55x_sdk/
 ├── spkg/                   # Self-contained CLI build system
 │   ├── spkg                # CLI launcher (bash script)
 │   ├── Dockerfile          # SDCC-based build environment
