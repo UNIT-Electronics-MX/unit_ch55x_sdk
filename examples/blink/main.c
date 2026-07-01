@@ -27,6 +27,6 @@ void main(void)
   {
     // Toggle LED state every 500ms
     PIN_toggle(PIN_LED);
-    DLY_ms(100);
+    DLY_ms(500);
   }
 }

@@ -42,10 +42,10 @@ enum {
 // #define SW4_KEY ADC_KEY_RIGHT
 // #define SW5_KEY ADC_KEY_ENTER
 
-#define SW1_KEY ADC_KEY_UP
-#define SW2_KEY ADC_KEY_RIGHT
-#define SW3_KEY ADC_KEY_LEFT
-#define SW4_KEY ADC_KEY_DOWN
+#define SW1_KEY ADC_KEY_LEFT 
+#define SW2_KEY ADC_KEY_UP
+#define SW3_KEY ADC_KEY_DOWN
+#define SW4_KEY ADC_KEY_RIGHT
 #define SW5_KEY ADC_KEY_SPACE
 
 // ADC thresholds (8-bit)
