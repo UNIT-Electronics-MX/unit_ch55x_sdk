@@ -4,6 +4,7 @@ SETLOCAL ENABLEEXTENSIONS
 set "SCRIPT_DIR=%~dp0"
 if not "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR%\"
 set "DOCKER_FILE=%SCRIPT_DIR%docker-compose.yml"
+for %%I in ("%SCRIPT_DIR%..") do set "SDK_ROOT=%%~fI\"
 
 echo SCRIPT_DIR is [%SCRIPT_DIR%]
 echo DOCKER_FILE is [%DOCKER_FILE%]
@@ -15,6 +16,7 @@ if "%1"=="--help" goto :help
 if "%1"=="compose" goto :compose
 if "%1"=="cop" goto :compose
 if "%1"=="init" goto :init
+if "%1"=="pio" goto :pio
 if "%1"=="-p" goto :build
 
 goto :help
@@ -29,12 +31,21 @@ echo spkg - CH552 SDK CLI Tool (Windows)
 echo(
 echo Usage:
 echo   spkg -p ^<path^> [command]    Run 'make [command]' in the path
+echo   spkg pio ^<path^> [args...]   Run PlatformIO and refresh the local platform
 echo   spkg compose                  Build the Docker image
 echo   spkg init ^<path^>            Create new project from template_project
 echo   spkg --version                Show version
 echo   spkg --help                   Show this help
 echo(
 exit /b
+
+:pio
+if "%2"=="" (
+    echo Error: you must specify the PlatformIO project path.
+    exit /b 1
+)
+call "%SDK_ROOT%upgrade.bat" "%~2" %3 %4 %5 %6 %7 %8 %9
+exit /b %ERRORLEVEL%
 
 :init
 if "%2"=="" (

@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+set -e
+
+SDK_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLATFORM_NAME="unit_ch55x"
+
+print_help() {
+    echo "Usage:"
+    echo "  ./upgrade"
+    echo "  ./upgrade <platformio-project> [pio args...]"
+    echo ""
+    echo "Examples:"
+    echo "  ./upgrade"
+    echo "  ./upgrade ./examples/ws2812 run"
+    echo "  ./upgrade ./examples/ws2812 run -t upload"
+}
+
+json_version() {
+    local file="$1"
+    python3 -c 'import json, sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("version", ""))' "$file" 2>/dev/null || true
+}
+
+find_platformio() {
+    if command -v pio >/dev/null 2>&1; then
+        command -v pio
+        return 0
+    fi
+    if command -v platformio >/dev/null 2>&1; then
+        command -v platformio
+        return 0
+    fi
+    if [ -x "$HOME/.platformio/penv/bin/pio" ]; then
+        echo "$HOME/.platformio/penv/bin/pio"
+        return 0
+    fi
+    if [ -x "$HOME/.platformio/penv/Scripts/pio.exe" ]; then
+        echo "$HOME/.platformio/penv/Scripts/pio.exe"
+        return 0
+    fi
+    return 1
+}
+
+sync_platformio_platform() {
+    local pio_bin="$1"
+    local sdk_version
+    local core_dir
+    local installed_dir
+    local installed_json
+    local installed_version
+
+    sdk_version="$(json_version "$SDK_ROOT/platform.json")"
+    if [ -z "$sdk_version" ]; then
+        echo "Could not read SDK version from $SDK_ROOT/platform.json" >&2
+        return 1
+    fi
+
+    core_dir="${PLATFORMIO_CORE_DIR:-$HOME/.platformio}"
+    installed_dir="$core_dir/platforms/$PLATFORM_NAME"
+    installed_json="$installed_dir/platform.json"
+
+    if [ ! -f "$installed_json" ]; then
+        echo "PlatformIO platform $PLATFORM_NAME is not installed yet."
+        return 0
+    fi
+
+    installed_version="$(json_version "$installed_json")"
+    if [ "$installed_version" = "$sdk_version" ]; then
+        echo "PlatformIO platform $PLATFORM_NAME is already at $sdk_version."
+        return 0
+    fi
+
+    echo "Updating PlatformIO platform $PLATFORM_NAME: ${installed_version:-unknown} -> $sdk_version"
+    if [ -n "$pio_bin" ]; then
+        "$pio_bin" pkg uninstall -g -p "$PLATFORM_NAME" --skip-dependencies --silent >/dev/null 2>&1 || true
+        if [ -d "$installed_dir" ]; then
+            rm -rf "$installed_dir"
+        fi
+    else
+        rm -rf "$installed_dir"
+    fi
+}
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    print_help
+    exit 0
+fi
+
+PROJECT_DIR=""
+if [ "$#" -gt 0 ]; then
+    PROJECT_DIR="$1"
+    shift
+    if [ ! -f "$PROJECT_DIR/platformio.ini" ]; then
+        echo "platformio.ini not found in $PROJECT_DIR" >&2
+        exit 1
+    fi
+fi
+
+PIO_BIN="$(find_platformio || true)"
+sync_platformio_platform "$PIO_BIN"
+
+if [ -n "$PROJECT_DIR" ]; then
+    if [ -z "$PIO_BIN" ]; then
+        echo "PlatformIO was not found. Install PlatformIO or add 'pio' to PATH." >&2
+        exit 1
+    fi
+    if [ "$#" -eq 0 ]; then
+        set -- run
+    fi
+    echo "Running PlatformIO in: $PROJECT_DIR"
+    (cd "$PROJECT_DIR" && "$PIO_BIN" "$@")
+fi

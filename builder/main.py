@@ -1,6 +1,8 @@
-from os import listdir, walk
+from os import listdir, makedirs, sep, walk
 from os.path import abspath, basename, dirname, exists, join, splitext
 from subprocess import call
+from tarfile import open as tar_open
+from urllib.request import urlretrieve
 
 from SCons.Errors import UserError
 from SCons.Script import AlwaysBuild, Builder, Default, DefaultEnvironment
@@ -10,6 +12,11 @@ env = DefaultEnvironment()
 platform = env.PioPlatform()
 board = env.BoardConfig()
 SDK_DIR = dirname(dirname(abspath(env.subst("$BUILD_SCRIPT"))))
+DEVLABTOOLS_ARCHIVE_URL = (
+    "https://github.com/UNIT-Electronics/Uelectronics-CH552-Arduino-Package/"
+    "releases/download/v0.0.6/ch55xduino-tools_mingw32-2026.06.21.tar.bz2"
+)
+DEVLABTOOLS_ARCHIVE_NAME = "ch55xduino-tools_mingw32-2026.06.21.tar.bz2"
 
 
 def _board_value(name, default):
@@ -106,6 +113,39 @@ def _get_uploader():
     return project_uploader if exists(env.subst(project_uploader)) else platform_uploader
 
 
+def _safe_extract_tar(archive_path, destination):
+    destination = abspath(destination)
+    with tar_open(archive_path, "r:bz2") as archive:
+        for member in archive.getmembers():
+            member_path = abspath(join(destination, member.name))
+            if member_path != destination and not member_path.startswith(destination + sep):
+                raise UserError("Unsafe path in tools archive: %s" % member.name)
+        archive.extractall(destination)
+
+
+def _ensure_windows_vnproch55x():
+    executable = join(SDK_DIR, "tools", "win", "vnproch55x.exe")
+    if exists(executable):
+        return executable
+
+    cache_dir = join(SDK_DIR, ".pio", "tool-cache")
+    archive_path = join(cache_dir, DEVLABTOOLS_ARCHIVE_NAME)
+    makedirs(cache_dir, exist_ok=True)
+
+    if not exists(archive_path):
+        print("Downloading Windows uploader: %s" % DEVLABTOOLS_ARCHIVE_URL)
+        urlretrieve(DEVLABTOOLS_ARCHIVE_URL, archive_path)
+
+    print("Extracting Windows uploader to %s" % SDK_DIR)
+    _safe_extract_tar(archive_path, SDK_DIR)
+
+    if not exists(executable):
+        raise UserError(
+            "Downloaded tools archive did not contain tools/win/vnproch55x.exe"
+        )
+    return executable
+
+
 def _host_tool_dir():
     if env["PLATFORM"] == "win32":
         return "win", "vnproch55x.exe"
@@ -117,17 +157,9 @@ def _host_tool_dir():
 def _get_vnproch55x():
     tool_dir, executable = _host_tool_dir()
     package_names = ("tool-devlabtools", "devlabtools", "tool-vnproch55x")
-    package_dirs = []
-    for name in package_names:
-        try:
-            package_dir = platform.get_package_dir(name)
-        except KeyError:
-            package_dir = None
-        if package_dir:
-            package_dirs.append(package_dir)
-
     candidates = []
-    for package_dir in package_dirs:
+    for name in package_names:
+        package_dir = join("$PIOPACKAGES_DIR", name)
         candidates.extend([
             join(package_dir, "tools", tool_dir, executable),
             join(package_dir, tool_dir, executable),
@@ -144,12 +176,15 @@ def _get_vnproch55x():
         if exists(resolved):
             return candidate
 
+    if env["PLATFORM"] == "win32":
+        return _ensure_windows_vnproch55x()
+
     raise UserError(
-        "vnproch55x uploader not found. PlatformIO should install "
-        "tool-devlabtools automatically; if it cannot, download "
+        "vnproch55x uploader not found. Download "
         "ch55xduino-tools_mingw32-2026.06.21.tar.bz2 from the "
         "Uelectronics-CH552-Arduino-Package v0.0.6 release and extract it "
-        "so tools/%s/%s exists in the SDK root or project root." % (
+        "so tools/%s/%s exists in the SDK root or project root. "
+        "Linux and macOS use upload_protocol = chprog by default." % (
             tool_dir,
             executable,
         )
@@ -160,6 +195,26 @@ def _upload_vnproch55x(target, source, env):
     uploader = env.subst(_get_vnproch55x())
     flags = [env.subst(str(flag)) for flag in env.get("UPLOADERFLAGS", [])]
     return call([uploader] + flags + [str(source[0])])
+
+
+def _ensure_pyusb():
+    python = env.subst("$PYTHONEXE")
+    check = "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec('usb') else 1)"
+    if call([python, "-c", check]) == 0:
+        return
+
+    print("PyUSB not found in the PlatformIO Python environment; installing pyusb")
+    if call([python, "-m", "pip", "install", "pyusb"]) != 0:
+        raise UserError(
+            "Failed to install pyusb automatically. Run: "
+            "%s -m pip install pyusb" % python
+        )
+
+
+def _upload_chprog(target, source, env):
+    _ensure_pyusb()
+    uploader = env.subst("$UPLOADER")
+    return call([env.subst("$PYTHONEXE"), uploader, str(source[0])])
 
 
 def _resolve_upload_protocol(upload_protocol):
@@ -265,7 +320,7 @@ env.Replace(
     UPLOADER=_get_uploader(),
     UPLOADCMD='"$PYTHONEXE" "$UPLOADER" "$SOURCE"',
 )
-upload_action = env.VerboseAction("$UPLOADCMD", "Uploading $SOURCE")
+upload_action = env.VerboseAction(_upload_chprog, "Uploading $SOURCE")
 
 upload_protocol = _resolve_upload_protocol(env.subst("$UPLOAD_PROTOCOL"))
 if upload_protocol in ("vnproch55x", "vnproch55x_usb"):
