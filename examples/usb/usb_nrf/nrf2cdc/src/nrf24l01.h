@@ -24,12 +24,21 @@ extern __xdata uint8_t NRF_rx_addr[];           // receive address
 extern __code uint8_t* NRF_STR[];               // speed strings
 extern __xdata options_t options;
 
+typedef enum {
+  NRF_TX_OK,
+  NRF_TX_MAX_RT,
+  NRF_TX_NO_RESPONSE,
+  NRF_TX_TIMEOUT
+} nrf_tx_result_t;
+
 // NRF functions
 void NRF_init(void);                            // init NRF
 void NRF_configure(void);                       // configure NRF
+uint8_t NRF_isConnected(void);                  // check local nRF SPI register readback
+uint8_t NRF_dynamicPayloadReady(void);          // check variable payload readback on pipes 0/1
 uint8_t NRF_available(void);                    // check if data is available for reading
 uint8_t NRF_readPayload(__xdata uint8_t *buf); // read payload into buffer, return length
-void NRF_writePayload(__xdata uint8_t *buf, uint8_t len);  // send a data package (max length 32)
+nrf_tx_result_t NRF_writePayload(__xdata uint8_t *buf, uint8_t len); // send up to 32 bytes
 uint8_t NRF_readconfig(void);
 uint8_t NRF_readstatus(void);
 uint8_t NRF_readfifostatus(void);

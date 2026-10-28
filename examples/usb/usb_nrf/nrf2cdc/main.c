@@ -135,6 +135,11 @@ void CDC_printSettings(void) {
   CDC_print  ("# TX address: "); CDC_printBytes(NRF_tx_addr, 5); CDC_write('\n');
   CDC_print  ("# RX address: "); CDC_printBytes(NRF_rx_addr, 5); CDC_write('\n');
   CDC_print  ("# Data rate:  "); CDC_print(NRF_STR[NRF_speed]);  CDC_println("bps");
+  CDC_print ("nRF SPI: "); CDC_println(NRF_isConnected() ? "OK" : "NO RESPONSE");
+  if(options & DYNAMIC_PAYLOAD) {
+    CDC_print ("Dynamic payload: ");
+    CDC_println(NRF_dynamicPayloadReady() ? "OK" : "ERROR");
+  }
   CDC_print ("Config register: "); CDC_printByte(cfg_reg); CDC_write('\n');
   CDC_print ("Status register: "); CDC_printByte(status_reg); CDC_write('\n');
   CDC_print ("FIFO Status register: "); CDC_printByte(NRF_readfifostatus()); CDC_write('\n');
@@ -343,10 +348,19 @@ void main(void) {
         buffer[bufptr] = '\0';
         parse();           // is it a command? -> parse
       } else {                                        // not a command?
+        nrf_tx_result_t tx_result;
         PIN_low(PIN_LED);                           // switch on LED
         //CDC_write('>');
-        NRF_writePayload(buffer, bufptr);           // send the buffer via NRF
-        CDC_print("Sent 0x"); CDC_printByte(bufptr); CDC_write('\n');
+        tx_result = NRF_writePayload(buffer, bufptr); // send the buffer via NRF
+        if(tx_result == NRF_TX_OK) {
+          CDC_print("Sent 0x"); CDC_printByte(bufptr); CDC_write('\n');
+        } else if(tx_result == NRF_TX_MAX_RT) {
+          CDC_println("TX failed: no RF ACK");
+        } else if(tx_result == NRF_TX_TIMEOUT) {
+          CDC_println("TX timeout");
+        } else {
+          CDC_println("nRF SPI: NO RESPONSE");
+        }
         CDC_flush();
       }
     }

@@ -137,6 +137,13 @@ void NRF_configure(void) {
   NRF_writeRegister(NRF_REG_RF_CH,    NRF_channel);        // set channel
   NRF_writeRegister(NRF_REG_RF_SETUP, NRF_SETUP[NRF_speed]); // set speed and power
   NRF_writeRegister(NRF_REG_FEATURE,  0x04);            // enable dynamic payload length
+  if(NRF_readRegister(NRF_REG_FEATURE) != 0x04) {       // some compatible modules need ACTIVATE
+    PIN_low(PIN_CSN);
+    SPI_transfer(0x50);
+    SPI_transfer(0x73);
+    PIN_high(PIN_CSN);
+    NRF_writeRegister(NRF_REG_FEATURE, 0x04);
+  }
   NRF_writeRegister(NRF_REG_DYNPD,    (options & DYNAMIC_PAYLOAD) ? 0x3F : 00);            // enable dynamic payload length
   NRF_writeRegister(NRF_REG_SETUP_AW, 0x03);            // Address width of 5
   NRF_writeCommand(NRF_CMD_FLUSH_RX);                   // flush RX FIFO
@@ -160,8 +167,24 @@ uint8_t NRF_readfifostatus(void) {
   return(NRF_readRegister(NRF_REG_FIFO_STATUS));
 }
 
+// Check that the local transceiver answers SPI with the values configured above.
+// This does not test whether another radio is in range.
+uint8_t NRF_isConnected(void) {
+  return NRF_readRegister(NRF_REG_CONFIG) == (NRF_CONFIG | 0x03)
+      && NRF_readRegister(NRF_REG_SETUP_AW) == 0x03
+      && NRF_readRegister(NRF_REG_RF_CH) == NRF_channel;
+}
+
+// Pipe 0 handles ACKs; pipe 1 receives application payloads.
+uint8_t NRF_dynamicPayloadReady(void) {
+  return NRF_isConnected()
+      && (NRF_readRegister(NRF_REG_FEATURE) & 0x04)
+      && (NRF_readRegister(NRF_REG_DYNPD) & 0x03) == 0x03;
+}
+
 // Check if data is available for reading
 uint8_t NRF_available(void) {
+  if(!NRF_isConnected()) return 0;
   if(NRF_readRegister(NRF_REG_STATUS) & 0x40) return 1;
   return(!(NRF_readRegister(NRF_REG_FIFO_STATUS) & 0x01));
 }
@@ -180,11 +203,22 @@ uint8_t NRF_readPayload(__xdata uint8_t *buf) {
 }
 
 // Send a data package (max length 32)
-void NRF_writePayload(__xdata uint8_t *buf, uint8_t len) {
+nrf_tx_result_t NRF_writePayload(__xdata uint8_t *buf, uint8_t len) {
+  uint16_t attempts = 10000;                           // at least 100 ms for auto retries
+  uint8_t status = 0;
+  if(!NRF_isConnected()) return NRF_TX_NO_RESPONSE;
   NRF_writeRegister(NRF_REG_STATUS, 0x30);              // clear status flags
   NRF_writeCommand(NRF_CMD_FLUSH_TX);                   // flush TX FIFO
   NRF_powerTX();                                        // switch to TX Mode
   NRF_writeBuffer(NRF_CMD_W_TX_PAYLOAD, buf, len);      // write payload and transmit
-  while(!(NRF_readRegister(NRF_REG_STATUS) & 0x30));    // wait until finished
+  do {
+    status = NRF_readRegister(NRF_REG_STATUS);
+    if(status & 0x30) break;
+    DLY_us(10);
+  } while(--attempts);                                  // bounded wait if nRF disappears
   NRF_powerRX();                                        // return to listening
+  if(!NRF_isConnected()) return NRF_TX_NO_RESPONSE;
+  if(status & 0x20) return NRF_TX_OK;                    // TX_DS
+  if(status & 0x10) return NRF_TX_MAX_RT;                // no RF acknowledgement
+  return NRF_TX_TIMEOUT;
 }
